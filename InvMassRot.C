@@ -151,7 +151,7 @@ void InvMassRot() {
 
         if (j == 8 && k == 3) {
           c1->cd(2);
-          hProjInvMassSub_S[j][k] = (TH1D *)hProjInvMassSub[j][k]->Clone();
+          hProjInvMassSub_S[j][k] = (TH1D *)hProjInvMassSubRot[j][k]->Clone();
           hProjInvMassSub_S[j][k]->Draw("l");
 
           hProjInvMassSub_S[j][k]->GetXaxis()->SetTitle("M_{#pi#pi} (GeV/c^{2})");
