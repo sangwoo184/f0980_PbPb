@@ -51,25 +51,8 @@ void InvMassRot() {
     // TFile* fin = new TFile("/Volumes/Seul/HP_results/239395.root");
     TFile *fin = new TFile((DIRECTORY + runName + results).c_str(), "read");
 
-    THnSparse* hInvMassUS;
-    THnSparse* hInvMassLSpp; 
-    THnSparse* hInvMassLSmm; //선언은 중괄호 안에 있으면 밖에 나와서 사라짐 그래서 if문 밖으로 뺌
-    THnSparse* hInvMassUSRot;
-
-    if (colName == "pp") {
-        hInvMassUS = (THnSparse*)fin->Get("lf-f0980analysis/hInvMass_f0980_US_EPA");
-        hInvMassLSpp = (THnSparse*)fin->Get("lf-f0980analysis/hInvMass_f0980_LSpp_EPA");
-        hInvMassLSmm = (THnSparse*)fin->Get("lf-f0980analysis/hInvMass_f0980_LSmm_EPA");
-    }
-    else if (colName == "pbpb") {
-        hInvMassUS = (THnSparse*)fin->Get("lf-f0980pbpbanalysis/hInvMass_f0980_US_EPA");
-        hInvMassLSpp = (THnSparse*)fin->Get("lf-f0980pbpbanalysis/hInvMass_f0980_LSpp_EPA");
-        hInvMassLSmm = (THnSparse*)fin->Get("lf-f0980pbpbanalysis/hInvMass_f0980_LSmm_EPA");
-        hInvMassUSRot = (THnSparse*)fin->Get("lf-f0980pbpbanalysis/hInvMass_f0980_USRot_EPA");
-    }
-    else{
-      std::cout << "collision name error" << std::endl;
-    } 
+    THnSparse* hInvMassUS = (THnSparse*)fin->Get("lf-f0980pbpbanalysis/hInvMass_f0980_US_EPA");
+    THnSparse* hInvMassUSRot = (THnSparse*)fin->Get("lf-f0980pbpbanalysis/hInvMass_f0980_USRot_EPA");
 
     //	centralitys
     std::vector<int> m_min = runInfos["m_min"];
