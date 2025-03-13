@@ -25,13 +25,13 @@ const std::string DIRECTORY = "/Users/sangwoo/cernbox/workspace/f0_draw/pass4_sm
 const std::string results = "/InvMassOutAll.root";
 // const std::string results = "/InvMassOutLSM.root";
 
-void drawInvMass();
+void drawInvMassLSM();
 
 int main() {
-  drawInvMass();
+  drawInvMassLSM();
 }
 
-void drawInvMass(){
+void drawInvMassLSM(){
   // std::ifstream file("runlist.json");
   // json inputJson = json::parse(file);
   // // auto Runs = inputJson["runs"];
