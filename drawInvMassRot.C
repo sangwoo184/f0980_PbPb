@@ -12,13 +12,15 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
-#include <nlohmann/json.hpp>
+// #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 #include "runlist.h"
+#include <rapidjson/document.h>
+#include <rapidjson/istreamwrapper.h>
 
 
-using json = nlohmann::json;
+// using json = nlohmann::json;
 
 const std::string DIRECTORY = "/Users/sangwoo/cernbox/workspace/f0_draw/pass4_small/";
 // const std::string results = "/InvMassOut_c.root";
@@ -32,23 +34,36 @@ int main() {
 }
 
 void drawInvMassRot(){
-  auto Runs = runlist();
+  // auto Runs = runlist();
+  rapidjson::Document doc;
+  auto& Runs = runlist::load(doc);
 
-  for (auto &[runName, runInfos] : Runs.items()) {
+  // for (auto &[runName, runInfos] : Runs.items()) {
+  for (auto itr = Runs.MemberBegin(); itr != Runs.MemberEnd(); ++itr) {
+    std::string runName = itr->name.GetString();
+    auto& runInfos = itr->value;
     std::cout << "Run number: " << runName << std::endl;
 
     //configuration
-    const std::string colName = runInfos["colName"];
-    const int nmult = runInfos["nmult"];
-    const int npt = runInfos["npt"];
-    const double mass_min = runInfos["mass"][0];
-    const double mass_max = runInfos["mass"][1];
+    const std::string colName = runInfos["colName"].GetString();
+    const int nmult = runInfos["nmult"].GetInt();
+    const int npt = runInfos["npt"].GetInt();
+    const double mass_min = runInfos["mass"].GetArray()[0].GetDouble();
+    const double mass_max = runInfos["mass"].GetArray()[1].GetDouble();
     //	centralitys
-    std::vector<int> m_min = runInfos["m_min"];
-    std::vector<int> m_max = runInfos["m_max"];
+    // std::vector<int> m_min = runInfos["m_min"];
+    // std::vector<int> m_max = runInfos["m_max"];
+    std::vector<int> m_min;
+    for (auto& v : runInfos["m_min"].GetArray()) m_min.push_back(v.GetInt());
+    std::vector<int> m_max;
+    for (auto& v : runInfos["m_max"].GetArray()) m_max.push_back(v.GetInt());
     //	pt
-    std::vector<double> p_min = runInfos["p_min"];
-    std::vector<double> p_max = runInfos["p_max"];
+    // std::vector<double> p_min = runInfos["p_min"];
+    // std::vector<double> p_max = runInfos["p_max"];
+    std::vector<double> p_min;
+    for (auto& v : runInfos["p_min"].GetArray()) p_min.push_back(v.GetDouble());
+    std::vector<double> p_max;
+    for (auto& v : runInfos["p_max"].GetArray()) p_max.push_back(v.GetDouble());
 
     TFile *fin = new TFile((DIRECTORY + runName + results).c_str(), "READ");
     if (!fin || fin->IsZombie()) {
@@ -108,6 +123,7 @@ void drawInvMassRot(){
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/Invmass_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/rebin_Invmass_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/InvmassRot_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
+      // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/InvmassRot_mult_rebin_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       std::cout << (DIRECTORY + runName + "/" + "plot_c").c_str() << std::endl;
       c->SaveAs(fileName);
       delete c;
