@@ -46,6 +46,7 @@ void drawInvMassRot(){
 
     //configuration
     const std::string colName = runInfos["colName"].GetString();
+    const std::string dataSet = runInfos["dataSet"].GetString();
     const int nmult = runInfos["nmult"].GetInt();
     const int npt = runInfos["npt"].GetInt();
     const double mass_min = runInfos["mass"].GetArray()[0].GetDouble();
@@ -94,16 +95,16 @@ void drawInvMassRot(){
       }
 
       if (colName == "pp") {
-          hProjInvMassSubRot[j][k]->Rebin(2); // 2 : 5MeV
+          hProjInvMassSubRot[j][k]->Rebin(2); // 2 : 5 MeV
       }
-      // else if (colName == "pbpb") {
-      //     hProjInvMassSubRot[j][k]->Rebin(2); // 
-      // }
+      else if (colName == "pbpb_kaon") {
+          hProjInvMassSubRot[j][k]->Rebin(2); // 2 : 2 MeV 
+      }
 
       hProjInvMassSubRot[j][k]->SetLineWidth(1);
       hProjInvMassSubRot[j][k]->Draw("");
       hProjInvMassSubRot[j][k]->GetXaxis()->SetTitle("M_{#pi#pi} (GeV/c^{2})");
-      hProjInvMassSubRot[j][k]->GetXaxis()->SetRangeUser(mass_min, mass_max);
+      hProjInvMassSubRot[j][k]->GetXaxis()->SetRangeUser(0.99, 1.08); // mass range
 
       //  TLegend *leg = new TLegend(0.4, 0.6, 0.7, 0.88);
       // TLegend *leg = new TLegend(0.42, 0.6, 0.88, 0.88);
@@ -111,7 +112,7 @@ void drawInvMassRot(){
       leg->SetTextSize(0.045);
       leg->SetLineWidth(0.0);
       leg->SetFillStyle(0);
-      leg->AddEntry((TObject *)0, "LHC23zzh_pass4_small", "");
+      leg->AddEntry((TObject *)0, dataSet.c_str(), "");
       leg->AddEntry((TObject *)0, Form("train number : %s", runName.c_str()), "");
       leg->AddEntry((TObject *)0, Form("FT0C %d#font[122]{-}%d %%", m_min[j], m_max[j]), "");
       leg->AddEntry((TObject *)0, "PbPb 5.36 TeV, |#it{y}| < 0.5", "");
@@ -122,7 +123,7 @@ void drawInvMassRot(){
       // TString fileName = Form("plot/Invmass_mult_%d_%d.pdf", m_min[j], m_max[j]); 
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/Invmass_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/rebin_Invmass_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
-      TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/InvmassRot_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
+      TString fileName = Form((DIRECTORY + runName + "/" + "plot_l/InvmassRot_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/InvmassRot_mult_rebin_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       std::cout << (DIRECTORY + runName + "/" + "plot_c").c_str() << std::endl;
       c->SaveAs(fileName);

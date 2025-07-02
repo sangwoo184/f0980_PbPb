@@ -47,6 +47,7 @@ void drawUSRot(){
 
     //configuration
     const std::string colName = runInfos["colName"].GetString();
+    const std::string dataSet = runInfos["dataSet"].GetString();
     const int nmult = runInfos["nmult"].GetInt();
     const int npt = runInfos["npt"].GetInt();
     const double mass_min = runInfos["mass"].GetArray()[0].GetDouble();
@@ -65,6 +66,22 @@ void drawUSRot(){
     for (auto& v : runInfos["p_min"].GetArray()) p_min.push_back(v.GetDouble());
     std::vector<double> p_max;
     for (auto& v : runInfos["p_max"].GetArray()) p_max.push_back(v.GetDouble());
+
+    //normalization for rotational background
+    double norm_min = 1.055;
+    double norm_max = 1.075;
+    if (runInfos.HasMember("norm")) {
+      norm_min = runInfos["norm"].GetArray()[0].GetDouble();
+      norm_max = runInfos["norm"].GetArray()[1].GetDouble();
+    }
+    
+    //2nd normalization for rotational background
+    double norm2min = 0.0;
+    double norm2max = 0.0;
+    if (runInfos.HasMember("norm2")) {
+      norm2min = runInfos["norm2"].GetArray()[0].GetDouble();
+      norm2max = runInfos["norm2"].GetArray()[1].GetDouble();
+    }
 
     TFile *fin = new TFile((DIRECTORY + runName + results).c_str(), "READ");
     if (!fin || fin->IsZombie()) {
@@ -99,9 +116,10 @@ void drawUSRot(){
           hProjInvMassUS[j][k]->Rebin(2); // 2 : 5MeV
           hProjInvMassUSRot[j][k]->Rebin(2); // 2 : 5MeV
       }
-      // else if (colName == "pbpb") {
-      //     hProjInvMassSub[j][k]->Rebin(2); //
-      // }
+      else if (colName == "pbpb_kaon") {
+          hProjInvMassUS[j][k]->Rebin(2); // 2 : 2MeV
+          hProjInvMassUSRot[j][k]->Rebin(2); // 2 : 52MeV
+      }
 
       hProjInvMassUS[j][k]->Draw("");
       // hProjInvMassUS[j][k]->Draw("hist p");
@@ -110,8 +128,28 @@ void drawUSRot(){
       // hProjInvMassUS[j][k]->SetMarkerStyle(4);
       // hProjInvMassUS[j][k]->SetMarkerSize(0.5);
       hProjInvMassUS[j][k]->GetXaxis()->SetTitle("M_{#pi#pi} (GeV/c^{2})");
-      hProjInvMassUS[j][k]->GetXaxis()->SetRangeUser(mass_min, mass_max);
+      hProjInvMassUS[j][k]->GetXaxis()->SetRangeUser(0.99, 1.08); // mass range
       hProjInvMassUS[j][k]->GetYaxis()->SetTitle("Counts");
+
+
+      // normalization range box
+      // hProjInvMassUSRot[j][k]->GetXaxis()->SetRangeUser(0.99, 1.08); // mass range
+      TH1D* hNormRegion = (TH1D*)hProjInvMassUSRot[j][k]->Clone("hNormRegion");
+      int nbins = hNormRegion->GetNbinsX();
+
+      for (int ibin = 1; ibin <= nbins; ++ibin) {
+        double bin_center = hNormRegion->GetBinCenter(ibin);
+        bool inNorm1 = (bin_center >= norm_min && bin_center <= norm_max);
+        bool inNorm2 = runInfos.HasMember("norm2") && (bin_center >= norm2min && bin_center <= norm2max);
+
+        if (!(inNorm1 || inNorm2)) {
+          hNormRegion->SetBinContent(ibin, 0);
+        }
+      }
+      hNormRegion->SetFillColorAlpha(kGreen, 0.3);
+      hNormRegion->SetLineColorAlpha(kGreen, 0.0);
+      hNormRegion->Draw("hist same");
+
 
       hProjInvMassUSRot[j][k]->Draw("same");
       // hProjInvMassUSRot[j][k]->Draw("hist p same");
@@ -119,7 +157,6 @@ void drawUSRot(){
       hProjInvMassUSRot[j][k]->SetLineColor(kYellow);
       // hProjInvMassUSRot[j][k]->SetMarkerStyle(4);
       // hProjInvMassUSRot[j][k]->SetMarkerSize(0.5);
-      
 
       // TLegend *leg = new TLegend(0.5, 0.6, 0.88, 0.88);
       // TLegend *leg = new TLegend(0.4, 0.6, 0.88, 0.88);
@@ -128,7 +165,7 @@ void drawUSRot(){
       leg->SetTextSize(0.045);
       leg->SetLineWidth(0.0);
       leg->SetFillStyle(0);
-      leg->AddEntry((TObject *)0, "LHC23zzh_pass4_small", "");
+      leg->AddEntry((TObject *)0, dataSet.c_str(),"");
       leg->AddEntry((TObject *)0, Form("train number : %s", runName.c_str()), "");
       leg->AddEntry((TObject *)0, Form("FT0C %d#font[122]{-}%d %%", m_min[j], m_max[j]), "");
       leg->AddEntry((TObject *)0, "PbPb 5.36 TeV, |#it{y}| < 0.5", "");
@@ -139,7 +176,7 @@ void drawUSRot(){
 
 
       //   TString fileName = Form("plot/Invmass_mult_%d_%d.pdf", m_min[j], m_max[j]); 
-      TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/USRot/Invmass_USRot_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
+      TString fileName = Form((DIRECTORY + runName + "/" + "plot_b/USRot/Invmass_USRot_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/USLS/rebin_Invmass_USLS_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/USLS_N/rebin_Invmass_USLS_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       std::cout << (DIRECTORY + runName + "/" + "plot_c").c_str() << std::endl;

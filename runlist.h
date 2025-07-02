@@ -1,4 +1,3 @@
-// runlist.h - RapidJSON 기반 runlist.json 로드 (고정된 key 사용)
 #pragma once
 
 #include <fstream>
@@ -24,7 +23,7 @@ inline rapidjson::Value& load(rapidjson::Document& doc, const std::string& filen
         std::exit(EXIT_FAILURE);
     }
 
-    const char* key = "singlerun"; // 원하는 키를 고정
+    const char* key = "singlerun";
 
     if (!doc.HasMember(key)) {
         std::cerr << "[runlist.h] Key \"" << key << "\" not found in JSON" << std::endl;

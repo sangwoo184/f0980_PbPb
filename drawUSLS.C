@@ -59,6 +59,7 @@ void drawUSLS(){
     // const std::string colName = runInfos["colName"];
     // const int nmult = runInfos["nmult"];
     const std::string colName = runInfos["colName"].GetString();
+    const std::string dataSet = runInfos["dataSet"].GetString();
     const int nmult = runInfos["nmult"].GetInt();
     // const int nmult = 1;
     // cout << "nmult: " << nmult << endl;
@@ -131,9 +132,10 @@ void drawUSLS(){
           hProjInvMassUS[j][k]->Rebin(2); // 2 : 5MeV
           hProjInvMassLS[j][k]->Rebin(2); // 2 : 5MeV
       }
-      // else if (colName == "pbpb") {
-      //     hProjInvMassSub[j][k]->Rebin(2); //
-      // }
+      else if (colName == "pbpb_kaon") {
+          hProjInvMassUS[j][k]->Rebin(2); // 2 : 2 MeV
+          hProjInvMassLS[j][k]->Rebin(2); // 2 : 2 MeV
+      }
 
       hProjInvMassUS[j][k]->Draw("");
       // hProjInvMassUS[j][k]->Draw("hist p");
@@ -142,7 +144,7 @@ void drawUSLS(){
       // hProjInvMassUS[j][k]->SetMarkerStyle(4);
       // hProjInvMassUS[j][k]->SetMarkerSize(0.5);
       hProjInvMassUS[j][k]->GetXaxis()->SetTitle("M_{#pi#pi} (GeV/c^{2})");
-      hProjInvMassUS[j][k]->GetXaxis()->SetRangeUser(mass_min, mass_max);
+      hProjInvMassUS[j][k]->GetXaxis()->SetRangeUser(0.99, 1.08); // mass range
       hProjInvMassUS[j][k]->GetYaxis()->SetTitle("Counts");
 
       hProjInvMassLS[j][k]->Draw("same");
@@ -160,7 +162,7 @@ void drawUSLS(){
       leg->SetTextSize(0.045);
       leg->SetLineWidth(0.0);
       leg->SetFillStyle(0);
-      leg->AddEntry((TObject *)0, "LHC23zzh_pass4_small", "");
+      leg->AddEntry((TObject *)0, dataSet.c_str(), "");
       leg->AddEntry((TObject *)0, Form("train number : %s", runName.c_str()), "");
       leg->AddEntry((TObject *)0, Form("FT0C %d#font[122]{-}%d %%", m_min[j], m_max[j]), "");
       leg->AddEntry((TObject *)0, "PbPb 5.36 TeV, |#it{y}| < 0.5", "");

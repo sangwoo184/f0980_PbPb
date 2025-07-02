@@ -42,6 +42,10 @@ void InvMassAll() {
     // // std::cout << "Run number: " << runName << ", Run info: " << runInfos << std::endl;
     // std::cout << "Run number: " << runName << std::endl;
     std::string runName = itr->name.GetString();
+    // std::ofstream normOut_txt((DIRECTORY + runName + "/" + "plot_h" + "/" + "norm_factor_Rot_initial.txt").c_str());
+    // std::ofstream normOut_csv((DIRECTORY + runName + "/" + "plot_h" + "/" + "norm_factor_Rot_initial.csv").c_str());
+    std::ofstream normOut_txt((DIRECTORY + runName + "/" + "plot_l" + "/" + "norm_factor_Rot_initial_" + runName + ".txt").c_str());
+    std::ofstream normOut_csv((DIRECTORY + runName + "/" + "plot_l" + "/" + "norm_factor_Rot_initial_" + runName + ".csv").c_str());
     auto& runInfos = itr->value;
 
     std::cout << "Run number: " << runName << std::endl;
@@ -54,10 +58,27 @@ void InvMassAll() {
     const double mass_max = runInfos["mass"].GetArray()[1].GetDouble();
     
     //normalization for rotational background
-    // const double norm_min = 1.85;
-    // const double norm_max = 2.0;
-    const double norm_min = 1.055;
-    const double norm_max = 1.075;
+    // double norm_min = 1.85;
+    // double norm_max = 2.0;
+    double norm_min = 1.055;
+    double norm_max = 1.075;
+    //low
+    // double norm_min = 0.99;
+    // double norm_max = 1.01;
+    //high
+    // double norm_min = 1.08;
+    // double norm_max = 1.06;
+    if (runInfos.HasMember("norm")) {
+      norm_min = runInfos["norm"].GetArray()[0].GetDouble();
+      norm_max = runInfos["norm"].GetArray()[1].GetDouble();
+    }
+    // 2nd normalization for rotational background
+    double norm2min = 0.0;
+    double norm2max = 0.0;
+    if (runInfos.HasMember("norm2")) {
+      norm2min = runInfos["norm2"].GetArray()[0].GetDouble();
+      norm2max = runInfos["norm2"].GetArray()[1].GetDouble();
+    }
     
     TFile *fin = new TFile((DIRECTORY + runName + results).c_str(), "read");
 
@@ -71,7 +92,7 @@ void InvMassAll() {
         hInvMassLSpp = (THnSparse*)fin->Get("lf-f0980analysis/hInvMass_f0980_LSpp_EPA");
         hInvMassLSmm = (THnSparse*)fin->Get("lf-f0980analysis/hInvMass_f0980_LSmm_EPA");
     }
-    else if (colName == "pbpb") {
+    else if (colName == "pbpb" || colName == "pbpb_kaon") {
         // hInvMassUS = (THnSparse*)fin->Get("lf-f0980pbpbanalysis/hInvMass_f0980_US_EPA");
         // hInvMassLSpp = (THnSparse*)fin->Get("lf-f0980pbpbanalysis/hInvMass_f0980_LSpp_EPA");
         // hInvMassLSmm = (THnSparse*)fin->Get("lf-f0980pbpbanalysis/hInvMass_f0980_LSmm_EPA");
@@ -121,8 +142,8 @@ void InvMassAll() {
     TH1D* hProjInvMassSubRot[nmult][npt];
     TH1D* hProjInvMassSubRot_D[nmult][npt];
     TH1D* hProjInvMassSubRot_S[nmult][npt];
-    TH1D* hProjInvMassNLS[nmult][npt];
-    TH1D* hProjInvMassNSub[nmult][npt];
+    // TH1D* hProjInvMassNLS[nmult][npt];
+    // TH1D* hProjInvMassNSub[nmult][npt];
 
     TCanvas *c1 = new TCanvas(Form("c1_%s",runName.c_str()), "Invariant mass distribution", 1400, 600);
     c1->Divide(2, 1, 0.001, 0.001);
@@ -135,8 +156,8 @@ void InvMassAll() {
     TDirectory *dir_SUB_EPA = fout -> mkdir("f0980_SUB_EPA");
     TDirectory *dir_USRot_EPA = fout -> mkdir("f0980_USRot_EPA");
     TDirectory *dir_SUBRot_EPA = fout -> mkdir("f0980_SUBRot_EPA");
-    TDirectory *dir_NLS_EPA = fout -> mkdir("f0980_NLS_EPA");
-    TDirectory *dir_NSub_EPA = fout -> mkdir("f0980_NSub_EPA");
+    // TDirectory *dir_NLS_EPA = fout -> mkdir("f0980_NLS_EPA");
+    // TDirectory *dir_NSub_EPA = fout -> mkdir("f0980_NSub_EPA");
 
     //	centrality = j
     for (int j = 0; j < nmult; j++) {
@@ -191,69 +212,51 @@ void InvMassAll() {
 
         // normalization for rotational method
         double US_integral = hProjInvMassUS[j][k] -> Integral(hProjInvMassUS[j][k] -> FindBin(norm_min), hProjInvMassUS[j][k] -> FindBin(norm_max));
-        double LS_integral = hProjInvMassLS[j][k] -> Integral(hProjInvMassLS[j][k] -> FindBin(norm_min), hProjInvMassLS[j][k] -> FindBin(norm_max));
         double USRot_integral = hProjInvMassUSRot[j][k] -> Integral(hProjInvMassUSRot[j][k] -> FindBin(norm_min), hProjInvMassUSRot[j][k] -> FindBin(norm_max));
-        double norm_factor_LS = (LS_integral > 0) ? (US_integral / LS_integral) : 1.0;
-        double norm_factor_Rot = (USRot_integral > 0) ? (US_integral / USRot_integral) : 1.0;
-        // std::cout << "normalization factor (LS) ["<<j<<"],["<<k<<"] : " << norm_factor_LS << std::endl;
-        // //test
-        // if (j == 8 && k == 3) {
-        //   auto errUSRot_iS = hProjInvMassUSRot[j][k] -> GetBinError(8);
-        //   std::cout << "error before scale: " << errUSRot_iS << std::endl;
-        // }
+        // double norm_factor_Rot = (USRot_integral > 0) ? (US_integral / USRot_integral) : 1.0;
+        double US_integral2 = (norm2max > norm2min) ? hProjInvMassUS[j][k]->Integral(hProjInvMassUS[j][k]->FindBin(norm2min), hProjInvMassUS[j][k]->FindBin(norm2max)) : 0.0;
+        double USRot_integral2 = (norm2max > norm2min) ? hProjInvMassUSRot[j][k]->Integral(hProjInvMassUSRot[j][k]->FindBin(norm2min), hProjInvMassUSRot[j][k]->FindBin(norm2max)) : 0.0;
+        double US_total = US_integral + US_integral2;
+        double USRot_total = USRot_integral + USRot_integral2;
+        double norm_factor_Rot = (USRot_total > 0) ? (US_total / USRot_total) : 1.0;
+        std::cout << ""<<runName<<" normalization factor ["<<j<<"],["<<k<<"] : " << norm_factor_Rot << std::endl;
+        normOut_txt << "run name" << runName << "centrality " << j << ", pT " << k << "; normalization factor : " << norm_factor_Rot << std::endl;
+        if (j == 0 && k == 0) {
+          normOut_csv << "run name,centrality,pT,normalization factor" << std::endl; // CSV header
+        }
+        normOut_csv << runName << "," << j << "," << k << "," << norm_factor_Rot << std::endl;
+        // double LS_integral = hProjInvMassLS[j][k] -> Integral(hProjInvMassLS[j][k] -> FindBin(norm_min), hProjInvMassLS[j][k] -> FindBin(norm_max));
+        // double norm_factor_LS = (LS_integral > 0) ? (US_integral / LS_integral) : 1.0;
 
         // like sign method
-        hProjInvMassNLS[j][k] = (TH1D *)hProjInvMassLS[j][k]->Clone();
-        hProjInvMassNLS[j][k]->Scale(norm_factor_LS);
-        hProjInvMassNLS[j][k]->SetName(Form("hProjInvMassNLS_%d_%d", j, k));
+        // hProjInvMassNLS[j][k] = (TH1D *)hProjInvMassLS[j][k]->Clone();
+        // hProjInvMassNLS[j][k]->Scale(norm_factor_LS);
+        // hProjInvMassNLS[j][k]->SetName(Form("hProjInvMassNLS_%d_%d", j, k));
 
-        hProjInvMassNSub[j][k] = (TH1D *)hProjInvMassUS[j][k]->Clone();
-        hProjInvMassNSub[j][k]->SetName(Form("hProjInvMassNSub_%d_%d", j, k));
-        hProjInvMassNSub[j][k]->Add(hProjInvMassNLS[j][k], -1.0);
+        // hProjInvMassNSub[j][k] = (TH1D *)hProjInvMassUS[j][k]->Clone();
+        // hProjInvMassNSub[j][k]->SetName(Form("hProjInvMassNSub_%d_%d", j, k));
+        // hProjInvMassNSub[j][k]->Add(hProjInvMassNLS[j][k], -1.0);
 
-        dir_NLS_EPA -> cd();
-        hProjInvMassNLS[j][k] -> Write();
-        dir_NSub_EPA -> cd();
-        hProjInvMassNSub[j][k] -> Write();
+        // dir_NLS_EPA -> cd();
+        // hProjInvMassNLS[j][k] -> Write();
+        // dir_NSub_EPA -> cd();
+        // hProjInvMassNSub[j][k] -> Write();
 
-        //rotational method
+        // //rotational method
         hProjInvMassUSRot[j][k]->Scale(norm_factor_Rot);
-
-        // //test
-        // if (j == 8 && k == 3) {
-        //   auto errUSRot_fS = hProjInvMassUSRot[j][k] -> GetBinError(8);
-          // std::cout << "normalization factor (Rot): " << norm_factor << std::endl;
-        //   std::cout << "error after scale: " << errUSRot_fS << std::endl;
-        // }
 
         hProjInvMassSubRot[j][k] = (TH1D *)hProjInvMassUS[j][k]->Clone();
         hProjInvMassSubRot[j][k]->SetName(Form("hProjInvMassSubRot_%d_%d", j, k));
         hProjInvMassSubRot[j][k]->Add(hProjInvMassUSRot[j][k], -1.0);
-
-        // //test
-        // if (j == 8 && k == 3) {
-        //   auto errSubRot_iEP = hProjInvMassSubRot[j][k] -> GetBinError(8);
-        //   std::cout << "error before EP: " << errSubRot_iEP << std::endl;
-        // }
-
-        // for (int q = 0; q < hProjInvMassSubRot[j][k]->GetNbinsX(); q++) {
-        //   auto binContent = hProjInvMassSubRot[j][k]->GetBinContent(q + 1);
-        //   auto errUS = hProjInvMassUS[j][k]->GetBinError(q + 1);
-        //   auto errUSRot = hProjInvMassUSRot[j][k]->GetBinError(q + 1);
-        //   auto binError = sqrt(errUS * errUS + errUSRot * errUSRot);
-        //   hProjInvMassSubRot[j][k]->SetBinError(q + 1, binError);
-        //   // if (j ==8 && k == 3 && q == 8) {
-        //   //   std::cout << "error after EP: " << errUSRot << std::endl;
-        //   // }
-        // }
 
         dir_USRot_EPA -> cd();
         hProjInvMassUSRot[j][k] -> Write();
         dir_SUBRot_EPA -> cd();
         hProjInvMassSubRot[j][k] -> Write();
 
+
         // Draw - like sign method
-        if (j == 6 && k == 3) {
+        if (j == 5 && k == 18) {
           c1->cd(1);
           gStyle->SetOptTitle(0);
           gStyle->SetOptStat(0);
@@ -303,7 +306,7 @@ void InvMassAll() {
         }
 
         // Draw - rotational method
-        if (j == 6 && k == 3) {
+        if (j == 5 && k == 18) {
           c2->cd(1);
           gStyle->SetOptTitle(0);
           gStyle->SetOptStat(0);
@@ -315,7 +318,8 @@ void InvMassAll() {
           hProjInvMassSubRot_D[j][k]->SetMarkerStyle(4);
           hProjInvMassSubRot_D[j][k]->SetMarkerSize(0.5);
           hProjInvMassSubRot_D[j][k]->GetXaxis()->SetTitle("M_{#pi#pi} (GeV/c^{2})");
-          hProjInvMassSubRot_D[j][k]->GetXaxis()->SetRangeUser(mass_min, mass_max);
+          // hProjInvMassSubRot_D[j][k]->GetXaxis()->SetRangeUser(mass_min, mass_max);
+          hProjInvMassSubRot_D[j][k]->GetXaxis()->SetRangeUser(0.99, 1.08);
           hProjInvMassSubRot_D[j][k]->GetYaxis()->SetTitle("Counts");
           hProjInvMassUSRot[j][k]->Draw("same");
           hProjInvMassUSRot[j][k]->SetMarkerColor(kRed);
@@ -344,7 +348,8 @@ void InvMassAll() {
           hProjInvMassSubRot_S[j][k]->Draw("l");
 
           hProjInvMassSubRot_S[j][k]->GetXaxis()->SetTitle("M_{#pi#pi} (GeV/c^{2})");
-          hProjInvMassSubRot_S[j][k]->GetXaxis()->SetRangeUser(mass_min, mass_max);
+          // hProjInvMassSubRot_S[j][k]->GetXaxis()->SetRangeUser(mass_min, mass_max);
+          hProjInvMassSubRot_S[j][k]->GetXaxis()->SetRangeUser(0.99, 1.08);
           hProjInvMassSubRot_S[j][k]->GetYaxis()->SetTitle("Counts");
           hProjInvMassSubRot_S[j][k]->SetMarkerColor(kBlue);
           hProjInvMassSubRot_S[j][k]->SetMarkerStyle(4);
@@ -356,5 +361,7 @@ void InvMassAll() {
     // fout->Close();
     c1->SaveAs((DIRECTORY + runName + "/" + "plot_c/bg_subtraction_LSM.pdf").c_str());
     c2->SaveAs((DIRECTORY + runName + "/" + "plot_c/bg_subtraction_Rot.pdf").c_str());
+    normOut_txt.close();
+    normOut_csv.close();
   }
 }
