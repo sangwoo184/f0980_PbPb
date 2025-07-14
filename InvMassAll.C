@@ -44,8 +44,8 @@ void InvMassAll() {
     std::string runName = itr->name.GetString();
     // std::ofstream normOut_txt((DIRECTORY + runName + "/" + "plot_h" + "/" + "norm_factor_Rot_initial.txt").c_str());
     // std::ofstream normOut_csv((DIRECTORY + runName + "/" + "plot_h" + "/" + "norm_factor_Rot_initial.csv").c_str());
-    std::ofstream normOut_txt((DIRECTORY + runName + "/" + "plot_l" + "/" + "norm_factor_Rot_initial_" + runName + ".txt").c_str());
-    std::ofstream normOut_csv((DIRECTORY + runName + "/" + "plot_l" + "/" + "norm_factor_Rot_initial_" + runName + ".csv").c_str());
+    std::ofstream normOut_txt((DIRECTORY + runName + "/" + "plot_c" + "/" + "norm_factor_Rot_initial_" + runName + ".txt").c_str());
+    std::ofstream normOut_csv((DIRECTORY + runName + "/" + "plot_c" + "/" + "norm_factor_Rot_initial_" + runName + ".csv").c_str());
     auto& runInfos = itr->value;
 
     std::cout << "Run number: " << runName << std::endl;

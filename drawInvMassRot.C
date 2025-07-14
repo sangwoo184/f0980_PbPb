@@ -123,7 +123,7 @@ void drawInvMassRot(){
       // TString fileName = Form("plot/Invmass_mult_%d_%d.pdf", m_min[j], m_max[j]); 
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/Invmass_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/rebin_Invmass_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
-      TString fileName = Form((DIRECTORY + runName + "/" + "plot_l/InvmassRot_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
+      TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/InvmassRot_mult_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/InvmassRot_mult_rebin_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       std::cout << (DIRECTORY + runName + "/" + "plot_c").c_str() << std::endl;
       c->SaveAs(fileName);

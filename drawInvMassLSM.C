@@ -165,8 +165,8 @@ void drawInvMassLSM(){
         // leg->AddEntry( (TObject*)0, Form("#it{p}_{T,lead} > 5 GeV/#it{c},%s",trnsName[r]), "");
         leg->AddEntry((TObject *)0, Form("%.1lf < #it{p}_{T} < %.1lf GeV/#it{c}", p_min[k], p_max[k]), "");
         leg->Draw();
-        TLegend* leg = MakeLegend(runName, m_min[j], m_max[j], p_min[k], p_max[k]);
-        leg->Draw();
+        // TLegend* leg = MakeLegend(runName, m_min[j], m_max[j], p_min[k], p_max[k]);
+        // leg->Draw();
 
 
         // nc->cd(cIdx);

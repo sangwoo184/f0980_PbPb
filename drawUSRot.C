@@ -176,7 +176,7 @@ void drawUSRot(){
 
 
       //   TString fileName = Form("plot/Invmass_mult_%d_%d.pdf", m_min[j], m_max[j]); 
-      TString fileName = Form((DIRECTORY + runName + "/" + "plot_b/USRot/Invmass_USRot_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
+      TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/USRot/Invmass_USRot_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/USLS/rebin_Invmass_USLS_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       // TString fileName = Form((DIRECTORY + runName + "/" + "plot_c/USLS_N/rebin_Invmass_USLS_%d_%d.pdf").c_str(), m_min[j], m_max[j]);
       std::cout << (DIRECTORY + runName + "/" + "plot_c").c_str() << std::endl;

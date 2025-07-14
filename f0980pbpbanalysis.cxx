@@ -21,6 +21,7 @@
 #include <cmath>
 #include <cstdlib>
 // #include <iostream>
+#include <iostream>
 #include <string>
 #include <tuple>
 
@@ -138,9 +139,10 @@ struct F0980pbpbanalysis {
 
   // for event mixing
   SliceCache cache;
-  Configurable<int> cfgNMixedEvents{"cfgNMixedEvents", 5, "Number of mixed events per event"};
-  ConfigurableAxis mixingAxisVertex{"mixingAxisVertex", {20, -10, 10}, "vertex axis for bin"};
-  ConfigurableAxis mixingAxisMultiplicity{"mixingAxisMultiplicity", {2000, 0, 10000}, "TPC multiplicity for bin"};
+  Configurable<int> cfgNMixedEvents{"cfgNMixedEvents", 10, "Number of mixed events per event"};
+  ConfigurableAxis mixingAxisVertex{"mixingAxisVertex", {10, -10, 10}, "vertex axis for bin"};
+  ConfigurableAxis mixingAxisMultiplicity{"mixingAxisMultiplicity", {VARIABLE_WIDTH, 0, 10, 20, 50, 100}, "TPC multiplicity for bin"};
+  // ConfigurableAxis mixingAxisMultiplicity{"mixingAxisMultiplicity", {2000, 0, 10000}, "TPC multiplicity for bin"};
   // ConfigurableAxis axisMultiplicityClass{"axisMultiplicityClass", {20, 0, 100}, "multiplicity percentile for bin"};
 
 
@@ -160,6 +162,7 @@ struct F0980pbpbanalysis {
   double angle;
   double relPhi;
   double relPhiRot;
+  double relPhiMix;
 
   // double massPi = o2::constants::physics::MassPionCharged;
   double massPtl;
@@ -185,6 +188,9 @@ struct F0980pbpbanalysis {
     woSame = 1,
     leq = 2
   };
+
+  //test
+  int colls = 0;
 
   TRandom* rn = new TRandom();
   // float theta2;
@@ -491,6 +497,7 @@ struct F0980pbpbanalysis {
         }
       }
     }
+    std::cout << "Ncolls: " << colls << std::endl;
   }
 
   void processEventMixing(EventCandidates const& collisions, TrackCandidates const& tracks)
@@ -503,40 +510,102 @@ struct F0980pbpbanalysis {
     SameKindPair<EventCandidates, TrackCandidates, BinningTypeVertexContributor> pair{binningOnPositions, cfgNMixedEvents, -1, collisions, trackTuple, &cache};
     ROOT::Math::PxPyPzMVector ptl1, ptl2, recoPtl;
     for (auto& [c1, t1, c2, t2] : pair) {
-      if (!eventSelected(c1) || !eventSelected(c2)) {
-        continue;
+      std::cout << "--------------------------------" << std::endl;
+      std::cout << "1st collision ID: " << c1.globalIndex() << " 1st collision bcID: "<< c1.bcId() << " 2nd collision ID: " << c2.globalIndex() << " 2nd collision bcID: " << c2.bcId() << std::endl;
+      if (c1.globalIndex() != c1.index()) {
+        std::cout << "WARNING: Mixing events with different global indices!" << std::endl;
       }
-
       if (cfgCentEst == CentEstList::FT0C) {
         centrality = c1.centFT0C();
       } else if (cfgCentEst == CentEstList::FT0M) {
         centrality = c1.centFT0M();
       }
-      double eventPlaneDet = std::atan2(c1.qvecIm()[qVecDetInd], c1.qvecRe()[qVecDetInd]) / static_cast<float>(nmode);
-
-      for (auto& [trk1, trk2] : o2::soa::combinations(o2::soa::CombinationsFullIndexPolicy(t1, t2))) {
-        if (!trackSelected(trk1) || !trackSelected(trk2)) {
-          continue;
-        }
-        if (!selectionPID(trk1) || !selectionPID(trk2)) {
-          continue;
-        }
-        if (!selectionPair(trk1, trk2)) {
-          continue;
-        }
-        ptl1 = ROOT::Math::PxPyPzMVector(trk1.px(), trk1.py(), trk1.pz(), massPtl);
-        ptl2 = ROOT::Math::PxPyPzMVector(trk2.px(), trk2.py(), trk2.pz(), massPtl);
-        recoPtl = ptl1 + ptl2;
-        if (recoPtl.Rapidity() > cfgRapMax || recoPtl.Rapidity() < cfgRapMin) {
-          continue;
-        }
-
-        relPhi = TVector2::Phi_0_2pi((recoPtl.Phi() - eventPlaneDet) * static_cast<float>(nmode));
-
-        if (trk1.sign() * trk2.sign() < 0) {
-          histos.fill(HIST("hInvMass_f0980_MixedUS_EPA"), recoPtl.M(), recoPtl.Pt(), centrality, relPhi);
-        } 
+      if (!eventSelected(c1) || !eventSelected(c2)) {
+        continue;
       }
+      if (c1.bcId() == c2.bcId()) {
+        continue;
+      }
+      double eventPlaneDet = std::atan2(c1.qvecIm()[qVecDetInd], c1.qvecRe()[qVecDetInd]) / static_cast<float>(nmode);
+      int total = 0;
+      int survive = 0;
+
+      for (auto& trk1 : t1) {
+        if (!trackSelected(trk1)) {
+          continue;
+        }
+        if (!selectionPID(trk1)) {
+          continue;
+        }
+
+        for (auto& trk2 : t2) {
+          if (!trackSelected(trk2)) {
+            continue;
+          }
+          if (!selectionPID(trk2)) {
+            continue;
+          }
+          if (!indexSelection(trk1, trk2)) {
+            continue;
+          }
+          if (!selectionPair(trk1, trk2)) {
+            continue;
+          }
+          ptl1 = ROOT::Math::PxPyPzMVector(trk1.px(), trk1.py(), trk1.pz(), massPtl);
+          ptl2 = ROOT::Math::PxPyPzMVector(trk2.px(), trk2.py(), trk2.pz(), massPtl);
+          recoPtl = ptl1 + ptl2;
+          if (recoPtl.Rapidity() > cfgRapMax || recoPtl.Rapidity() < cfgRapMin) {
+            continue;
+          }
+
+          relPhiMix = TVector2::Phi_0_2pi((recoPtl.Phi() - eventPlaneDet) * static_cast<float>(nmode));
+
+          if (trk1.sign() * trk2.sign() < 0) {
+            histos.fill(HIST("hInvMass_f0980_MixedUS_EPA"), recoPtl.M(), recoPtl.Pt(), centrality, relPhiMix);
+          } else if (trk1.sign() > 0 && trk2.sign() > 0) {
+            histos.fill(HIST("hInvMass_f0980_MixedLSpp_EPA"), recoPtl.M(), recoPtl.Pt(), centrality, relPhiMix);
+          } else if (trk1.sign() < 0 && trk2.sign() < 0) {
+            histos.fill(HIST("hInvMass_f0980_MixedLSmm_EPA"), recoPtl.M(), recoPtl.Pt(), centrality, relPhiMix);
+          }
+        }
+      }
+
+      // for (auto& [trk1, trk2] : o2::soa::combinations(o2::soa::CombinationsFullIndexPolicy(t1, t2))) {
+      //   total++;
+      //   if (!trackSelected(trk1) || !trackSelected(trk2)) {
+      //     continue;
+      //   }
+      //   if (!selectionPID(trk1) || !selectionPID(trk2)) {
+      //     continue;
+      //   }
+      //   if (!indexSelection(trk1, trk2)) {
+      //     continue;
+      //   }
+      //   if (!selectionPair(trk1, trk2)) {
+      //     continue;
+      //   }
+      //   ptl1 = ROOT::Math::PxPyPzMVector(trk1.px(), trk1.py(), trk1.pz(), massPtl);
+      //   ptl2 = ROOT::Math::PxPyPzMVector(trk2.px(), trk2.py(), trk2.pz(), massPtl);
+      //   recoPtl = ptl1 + ptl2;
+      //   if (recoPtl.Rapidity() > cfgRapMax || recoPtl.Rapidity() < cfgRapMin) {
+      //     continue;
+      //   }
+      //   survive++;
+
+      //   relPhiMix = TVector2::Phi_0_2pi((recoPtl.Phi() - eventPlaneDet) * static_cast<float>(nmode));
+
+      //   if (trk1.sign() * trk2.sign() < 0) {
+      //     histos.fill(HIST("hInvMass_f0980_MixedUS_EPA"), recoPtl.M(), recoPtl.Pt(), centrality, relPhiMix);
+      //   } else if (trk1.sign() > 0 && trk2.sign() > 0) {
+      //     histos.fill(HIST("hInvMass_f0980_MixedLSpp_EPA"), recoPtl.M(), recoPtl.Pt(), centrality, relPhiMix);
+      //   } else if (trk1.sign() < 0 && trk2.sign() < 0) {
+      //     histos.fill(HIST("hInvMass_f0980_MixedLSmm_EPA"), recoPtl.M(), recoPtl.Pt(), centrality, relPhiMix);
+      //   }
+      // }
+      std::cout << "1st collision ID: " << c1.globalIndex() << " 2nd collision ID: " << c2.globalIndex() << std::endl;
+      std::cout << "total " << total << std::endl;
+      std::cout << "survive " << survive << std::endl;
+      std::cout << "--------------------------------" << std::endl;
     }
   }
   PROCESS_SWITCH(F0980pbpbanalysis, processEventMixing, "Process Event mixing", true);
@@ -577,6 +646,10 @@ struct F0980pbpbanalysis {
                {HistType::kTHnSparseF, {massAxis, ptAxis, centAxis, epAxis}});
     histos.add("hInvMass_f0980_MixedUS_EPA", "unlike invariant mass Mixed",
                {HistType::kTHnSparseF, {massAxis, ptAxis, centAxis, epAxis}});
+    histos.add("hInvMass_f0980_MixedLSpp_EPA", "++ invariant mass Mixed",
+               {HistType::kTHnSparseF, {massAxis, ptAxis, centAxis, epAxis}});
+    histos.add("hInvMass_f0980_MixedLSmm_EPA", "-- invariant mass Mixed",
+               {HistType::kTHnSparseF, {massAxis, ptAxis, centAxis, epAxis}});
     //    if (doprocessMCLight) {
     //      histos.add("MCL/hpT_f0980_GEN", "generated f0 signals", HistType::kTH1F, {qaPtAxis});
     //      histos.add("MCL/hpT_f0980_REC", "reconstructed f0 signals", HistType::kTH3F, {massAxis, qaPtAxis, centAxis});
@@ -614,6 +687,8 @@ struct F0980pbpbanalysis {
   void processData(EventCandidates::iterator const& collision,
                    TrackCandidates const& tracks, aod::BCsWithTimestamps const&)
   {
+    std::cout << "Processing collision with ID: " << collision.globalIndex() << " and BC ID: " << collision.bcId() << std::endl;
+    colls++;
     if (cfgCentEst == CentEstList::FT0C) {
       centrality = collision.centFT0C();
     } else if (cfgCentEst == CentEstList::FT0M) {
@@ -626,6 +701,7 @@ struct F0980pbpbanalysis {
     histos.fill(HIST("QA/Vz"), collision.posZ(), 1.0);
 
     fillHistograms<false>(collision, tracks, 2); // second order
+    std::cout << "init Ncolls: " << colls << std::endl;
   };
   PROCESS_SWITCH(F0980pbpbanalysis, processData, "Process Event for data", true);
 };
